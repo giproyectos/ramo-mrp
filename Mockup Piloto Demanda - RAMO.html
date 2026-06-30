@@ -1,0 +1,735 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAMO — Gestión de la Demanda</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --navy:#1B3A6B;--blue:#2E75B6;--lblue:#EBF4FF;
+  --green:#38A169;--lgreen:#C6F6D5;--dgreen:#276749;
+  --amber:#D69E2E;--lamber:#FEFCBF;--damber:#744210;
+  --red:#E53E3E;--lred:#FED7D7;--dred:#9B2335;
+  --bg:#F0F4F9;--card:#fff;--border:#E2E8F0;
+  --t1:#1A202C;--t2:#4A5568;--t3:#A0AEC0;
+  --sidebar:220px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100vh;display:flex;font-size:14px;color:var(--t1)}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);min-height:100vh;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
+.sb-brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-logo{font-size:18px;font-weight:700;color:#fff;letter-spacing:1px}
+.sb-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+.sb-cycle{margin:12px 14px;background:rgba(255,255,255,.08);border-radius:8px;padding:10px 12px}
+.sb-cycle-label{font-size:9px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.sb-cycle-name{font-size:12px;color:#fff;font-weight:500}
+.sb-cycle-sub{font-size:11px;color:#FBD38D;margin-top:3px}
+.sb-nav{flex:1;padding:8px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 18px;color:rgba(255,255,255,.6);cursor:pointer;transition:all .15s;font-size:13px;border-left:3px solid transparent;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
+.nav-item.on{background:rgba(255,255,255,.12);color:#fff;border-left-color:#63B3ED;font-weight:500}
+.nav-item i{font-size:18px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:#E53E3E;color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.sb-user{padding:14px 16px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.user-name{font-size:12px;font-weight:500;color:#fff}
+.user-role{font-size:10px;color:rgba(255,255,255,.5)}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.topbar-title{font-size:15px;font-weight:600;color:var(--navy)}
+.topbar-sub{font-size:12px;color:var(--t3);margin-top:1px}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.notif-btn{position:relative;width:34px;height:34px;border-radius:8px;background:var(--bg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:18px}
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:#E53E3E;border-radius:50%;border:2px solid #fff}
+.topbar-cta{padding:7px 14px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:background .15s}
+.topbar-cta:hover{background:var(--blue)}
+/* CONTENT */
+.content{padding:24px;flex:1}
+.screen{display:none;animation:fadeIn .2s ease}
+.screen.on{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* CARDS */
+.card{background:var(--card);border-radius:10px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:6px}
+.card-body{padding:16px}
+/* METRICS GRID */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.metric-card{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:16px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.metric-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);border-color:var(--blue)}
+.mc-label{font-size:11px;color:var(--t3);font-weight:500;margin-bottom:6px}
+.mc-val{font-size:26px;font-weight:700;line-height:1}
+.mc-sub{font-size:11px;color:var(--t3);margin-top:5px;display:flex;align-items:center;gap:4px}
+/* CYCLE STEPS */
+.cycle-track{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:16px 20px;margin-bottom:20px}
+.cycle-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cycle-title{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px}
+.steps-row{display:flex;align-items:center}
+.step-item{display:flex;flex-direction:column;align-items:center;flex:1}
+.step-dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s}
+.step-dot.done{background:var(--navy);color:#fff}
+.step-dot.now{background:var(--blue);color:#fff;box-shadow:0 0 0 4px rgba(46,117,182,.2);font-size:11px;font-weight:700}
+.step-dot.todo{background:#fff;border:2px solid var(--border);color:var(--t3)}
+.step-label{font-size:10px;margin-top:5px;text-align:center;color:var(--t3);line-height:1.3}
+.step-date{font-size:9px;margin-top:2px;text-align:center}
+.step-conn{flex:1;height:2px;margin-bottom:28px}
+.step-conn.done{background:var(--navy)}
+.step-conn.active{background:var(--blue)}
+.step-conn.todo{background:var(--border)}
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1fr 1.6fr;gap:14px;margin-bottom:20px}
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:var(--navy);color:#fff;padding:9px 11px;text-align:left;font-size:11px;font-weight:500;white-space:nowrap}
+.tbl th:first-child{border-radius:0}
+.tbl td{padding:9px 11px;border-bottom:1px solid var(--bg);white-space:nowrap;color:var(--t1)}
+.tbl tr:hover td{background:#F7FAFC}
+.tbl tfoot td{background:#F7FAFC;font-weight:600;font-size:12px;border-top:2px solid var(--border);border-bottom:none}
+.tbl td.ia{background:var(--lblue);color:var(--navy);font-weight:600}
+.tbl th.ia{background:var(--blue)}
+.tbl td.pf{background:var(--navy);color:#fff;font-weight:600}
+.tbl th.pf{background:#0F4C81}
+.tbl tr.expandable td{cursor:pointer}
+.tbl tr.expandable:hover td{background:#EEF2FF}
+.expand-row td{background:#F7FAFC!important;padding:0!important}
+.expand-inner{padding:10px 14px 14px;display:none}
+.expand-inner.open{display:block}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.bg-green{background:var(--lgreen);color:var(--dgreen)}
+.bg-amber{background:var(--lamber);color:var(--damber)}
+.bg-blue{background:var(--lblue);color:var(--navy)}
+.bg-red{background:var(--lred);color:var(--dred)}
+/* FILTERS */
+.filters{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.fsel{font-size:12px;padding:7px 10px;font-family:inherit;background:#fff;color:var(--t1);border:1px solid var(--border);border-radius:7px;cursor:pointer;outline:none}
+.fsel:focus{border-color:var(--blue)}
+.utoggle{display:flex;background:#EDF2F7;border-radius:8px;padding:2px;gap:2px}
+.utoggle button{padding:5px 13px;font-size:11px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;color:var(--t3);background:none;transition:all .15s}
+.utoggle button.on{background:var(--navy);color:#fff}
+/* BB SPLIT */
+.bb-split{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start}
+.bb-list{display:flex;flex-direction:column;gap:10px}
+.bb-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.bb-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:var(--blue)}
+.bb-card.selected{border-left-color:var(--blue);background:#FAFCFF;box-shadow:0 2px 8px rgba(46,117,182,.15)}
+.bb-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.bb-actions{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bg)}
+.btn-ok{padding:6px 16px;background:var(--navy);border:none;border-radius:7px;color:#fff;font-size:12px;font-family:inherit;cursor:pointer;transition:background .15s}
+.btn-ok:hover{background:var(--blue)}
+.btn-no{padding:6px 16px;background:#fff;border:1px solid var(--border);border-radius:7px;color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer;transition:background .15s}
+.btn-no:hover{background:var(--bg)}
+.detail-panel{position:sticky;top:80px}
+/* ACCURACY */
+.acc-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:20px}
+/* NOTIFICATIONS PANEL */
+.notif-panel{position:fixed;top:56px;right:16px;width:320px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.12);z-index:100;display:none}
+.notif-panel.open{display:block}
+.notif-item{padding:12px 14px;border-bottom:1px solid var(--bg);display:flex;gap:10px;align-items:flex-start}
+.notif-item:last-child{border-bottom:none}
+.notif-dot-i{width:8px;height:8px;border-radius:50%;background:var(--blue);margin-top:5px;flex-shrink:0}
+.notif-text{font-size:12px;color:var(--t1);line-height:1.5}
+.notif-time{font-size:10px;color:var(--t3);margin-top:2px}
+/* PILL */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.pill-up{background:#C6F6D5;color:#276749}
+.pill-dn{background:var(--lred);color:var(--dred)}
+.pill-eq{background:#EDF2F7;color:var(--t2)}
+/* TOGGLE VIEW BTN */
+.view-toggle{display:flex;gap:2px;background:#EDF2F7;border-radius:8px;padding:2px}
+.vt-btn{padding:5px 10px;border:none;background:none;border-radius:6px;cursor:pointer;font-size:18px;color:var(--t3);transition:all .15s}
+.vt-btn.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+/* LOADING SHIMMER */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">RAMO</div>
+    <div class="sb-sub">Gestión de la Demanda</div>
+  </div>
+  <div class="sb-cycle">
+    <div class="sb-cycle-label">Ciclo activo</div>
+    <div class="sb-cycle-name">Demanda &middot; Julio 2026</div>
+    <div class="sb-cycle-sub">&#9201; Cierra en 3 días</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-item on" id="nav-dashboard" onclick="showScreen('dashboard')">
+      <i class="ti ti-layout-dashboard"></i><span>Dashboard</span>
+    </div>
+    <div class="nav-item" id="nav-forecast" onclick="showScreen('forecast')">
+      <i class="ti ti-chart-line"></i><span>Pronóstico por SKU</span>
+    </div>
+    <div class="nav-item" id="nav-bb" onclick="showScreen('bb')">
+      <i class="ti ti-git-merge"></i><span>Building Blocks</span>
+      <span class="nav-badge" id="navBadge">2</span>
+    </div>
+    <div class="nav-item" id="nav-accuracy" onclick="showScreen('accuracy')">
+      <i class="ti ti-target"></i><span>Asertividad</span>
+    </div>
+  </nav>
+  <div class="sb-user">
+    <div class="user-av">DG</div>
+    <div>
+      <div class="user-name">Diana García</div>
+      <div class="user-role">Planeación Demanda</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topTitle">Dashboard</div>
+      <div class="topbar-sub" id="topSub">Resumen del ciclo de Demanda · Julio 2026</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="notif-btn" onclick="toggleNotif()" title="Notificaciones">
+        <i class="ti ti-bell"></i>
+        <span class="notif-dot"></span>
+      </button>
+      <button class="topbar-cta" onclick="showScreen('bb')">
+        <i class="ti ti-check"></i> Revisar Building Blocks
+      </button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-panel" id="notifPanel">
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:600">Actividad reciente</span>
+      <span style="font-size:11px;color:var(--t3);cursor:pointer" onclick="toggleNotif()">Cerrar</span>
+    </div>
+    <div class="notif-item"><div class="notif-dot-i"></div><div><div class="notif-text"><strong>Camila Torres</strong> envió ajuste en Gansito Barrita (6x37g) +15K und &mdash; Campaña back-to-school</div><div class="notif-time">Hace 45 min</div></div></div>
+    <div class="notif-item"><div class="notif-dot-i"></div><div><div class="notif-text"><strong>Andrés Molina</strong> envió ajuste en Galletas Lecheritas (8x19g) +10K und &mdash; Pedido especial Olímpica</div><div class="notif-time">Hace 2 horas</div></div></div>
+    <div class="notif-item" style="opacity:.6"><div class="notif-dot-i" style="background:var(--t3)"></div><div><div class="notif-text"><strong>Sistema</strong> &mdash; Línea base IA actualizada con ventas reales semana 23</div><div class="notif-time">Lunes 9 jun, 07:00</div></div></div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== SCREEN: DASHBOARD ===== -->
+    <div class="screen on" id="screen-dashboard">
+
+      <div class="metrics">
+        <div class="metric-card" onclick="showScreen('forecast')">
+          <div class="mc-label">SKUs en ciclo</div>
+          <div class="mc-val" style="color:var(--navy)">847</div>
+          <div class="mc-sub" style="color:var(--t3)">3 canales &middot; 5 regionales &nbsp;<i class="ti ti-arrow-right" style="font-size:11px"></i></div>
+        </div>
+        <div class="metric-card" onclick="showScreen('forecast')">
+          <div class="mc-label">Variación vs plan anterior</div>
+          <div class="mc-val" style="color:var(--green)">+3.2%</div>
+          <div class="mc-sub"><span style="color:var(--green)">&#8593;</span> Ponqués lidera el incremento</div>
+        </div>
+        <div class="metric-card" onclick="showScreen('accuracy')">
+          <div class="mc-label">Asertividad junio</div>
+          <div class="mc-val" style="color:var(--navy)">87.4%</div>
+          <div class="mc-sub" style="color:var(--green)">&#8593; 1.8 pp vs mayo &nbsp;<i class="ti ti-arrow-right" style="font-size:11px"></i></div>
+        </div>
+        <div class="metric-card" onclick="showScreen('bb')">
+          <div class="mc-label">Building Blocks pendientes</div>
+          <div class="mc-val" style="color:var(--amber)" id="dashPend">2</div>
+          <div class="mc-sub">de 4 ajustes enviados &nbsp;<i class="ti ti-arrow-right" style="font-size:11px" style="color:var(--amber)"></i></div>
+        </div>
+      </div>
+
+      <div class="cycle-track">
+        <div class="cycle-header">
+          <span class="cycle-title">Flujo del ciclo de Demanda</span>
+          <span class="badge bg-amber">En curso &mdash; etapa Building Blocks</span>
+        </div>
+        <div class="steps-row">
+          <div class="step-item">
+            <div class="step-dot done"><i class="ti ti-check"></i></div>
+            <div class="step-label">Línea base<br>IA</div>
+            <div class="step-date" style="color:var(--green)">9 jun ✓</div>
+          </div>
+          <div class="step-conn done"></div>
+          <div class="step-item">
+            <div class="step-dot done"><i class="ti ti-check"></i></div>
+            <div class="step-label">Revisión<br>Comercial</div>
+            <div class="step-date" style="color:var(--green)">11 jun ✓</div>
+          </div>
+          <div class="step-conn active"></div>
+          <div class="step-item">
+            <div class="step-dot now">BB</div>
+            <div class="step-label" style="color:var(--blue);font-weight:600">Building<br>Blocks</div>
+            <div class="step-date" style="color:var(--blue);font-weight:600">← Hoy</div>
+          </div>
+          <div class="step-conn todo"></div>
+          <div class="step-item">
+            <div class="step-dot todo"><i class="ti ti-user-check"></i></div>
+            <div class="step-label">Aprobación<br>final</div>
+            <div class="step-date" style="color:var(--t3)">lun 16 jun</div>
+          </div>
+          <div class="step-conn todo"></div>
+          <div class="step-item">
+            <div class="step-dot todo"><i class="ti ti-database-import"></i></div>
+            <div class="step-label">Carga<br>SAP MD61</div>
+            <div class="step-date" style="color:var(--t3)">mar 17 jun</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-git-merge" style="color:var(--blue)"></i> Estado Building Blocks</span>
+          </div>
+          <div class="card-body" style="display:flex;align-items:center;gap:20px">
+            <div style="width:130px;height:130px;flex-shrink:0"><canvas id="chartBBStatus"></canvas></div>
+            <div style="display:flex;flex-direction:column;gap:10px;flex:1">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div>
+                <span style="font-size:13px">Aprobados</span>
+                <span style="margin-left:auto;font-weight:600;font-size:15px">2</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:10px;height:10px;border-radius:50%;background:var(--amber)"></div>
+                <span style="font-size:13px">En revisión</span>
+                <span style="margin-left:auto;font-weight:600;font-size:15px;color:var(--amber)" id="chartRevN">2</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:10px;height:10px;border-radius:50%;background:var(--lred);border:1px solid var(--red)"></div>
+                <span style="font-size:13px;color:var(--t3)">Rechazados</span>
+                <span style="margin-left:auto;font-weight:600;font-size:15px;color:var(--t3)" id="chartRejN">0</span>
+              </div>
+              <div style="margin-top:6px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--t2)">
+                Impacto neto: <strong style="color:var(--green)">+37 mil und.</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-target" style="color:var(--green)"></i> Asertividad del pronóstico</span>
+            <span style="font-size:11px;color:var(--t3)">Últimos 6 ciclos de Demanda</span>
+          </div>
+          <div class="card-body" style="height:160px"><canvas id="chartAccTrend"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><i class="ti ti-users" style="color:var(--blue)"></i> Estado por área</span>
+          <span class="badge bg-amber">Building Blocks: cierre lun 16 jun</span>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Área</th><th>Responsable</th><th>Ajustes enviados</th><th>Última actividad</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr style="cursor:pointer" onclick="showScreen('bb')"><td><strong>Comercial</strong></td><td>Andrés Molina</td><td style="color:var(--t2);font-size:12px">2 ajustes &middot; Chocoramo Tajada +20K, Galletas Lecheritas +10K</td><td style="font-size:12px;color:var(--t3)">13/Jun 10:42</td><td><span class="badge bg-green">Completado</span></td></tr>
+            <tr style="cursor:pointer;background:#FFFBEB" onclick="showScreen('bb')"><td><strong>Marca &ndash; Ponqués</strong></td><td>Camila Torres</td><td style="color:var(--t2);font-size:12px">1 ajuste &middot; Gansito Barrita +15K</td><td style="font-size:12px;color:var(--t3)">13/Jun 14:15</td><td><span class="badge bg-amber">En revisión</span></td></tr>
+            <tr style="cursor:pointer" onclick="showScreen('bb')"><td><strong>Negocio Moderno</strong></td><td>Juan Restrepo</td><td style="color:var(--t2);font-size:12px">1 ajuste &middot; Tostacos Queso &minus;12K</td><td style="font-size:12px;color:var(--t3)">10/Jun 09:20</td><td><span class="badge bg-green">Completado</span></td></tr>
+            <tr><td><strong>Marca &ndash; Pasabocas</strong></td><td>Sofía Vargas</td><td style="color:var(--t2);font-size:12px">Sin ajustes este ciclo</td><td style="font-size:12px;color:var(--t3)">09/Jun 16:00</td><td><span class="badge bg-green">Completado</span></td></tr>
+            <tr style="background:var(--lblue)"><td style="color:var(--navy);font-weight:600">Planeación Demanda</td><td style="color:var(--navy);font-weight:500">Diana García</td><td style="color:var(--t2);font-size:12px">Coordinación y aprobación</td><td style="font-size:12px;color:var(--t3)">Hoy, 15:30</td><td><span class="badge bg-blue">Coordinando</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN: FORECAST ===== -->
+    <div class="screen" id="screen-forecast">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <span class="card-title"><i class="ti ti-chart-bar" style="color:var(--blue)"></i> Plan final vs plan anterior por categoría</span>
+        </div>
+        <div class="card-body" style="height:170px"><canvas id="chartCatComp"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px">
+          <span class="card-title"><i class="ti ti-table" style="color:var(--blue)"></i> Detalle por SKU</span>
+          <div class="filters" style="margin:0">
+            <select class="fsel" id="fCanal" onchange="renderForecast()">
+              <option value="">Todos los canales</option>
+              <option value="Tradicional">Tradicional</option>
+              <option value="Moderno">Moderno</option>
+            </select>
+            <select class="fsel" id="fCat" onchange="renderForecast()">
+              <option value="">Todas las categorías</option>
+              <option value="Ponqués">Ponqués</option>
+              <option value="Pasabocas">Pasabocas</option>
+              <option value="Galletas">Galletas</option>
+            </select>
+            <div class="utoggle">
+              <button class="on" id="u0" onclick="setUnit(0)">Miles und.</button>
+              <button id="u1" onclick="setUnit(1)">Toneladas</button>
+              <button id="u2" onclick="setUnit(2)">Valor M COP</button>
+            </div>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="min-width:145px">SKU <span style="opacity:.5;font-weight:400">(clic para expandir)</span></th>
+                <th>Categoría</th>
+                <th>Canal</th>
+                <th style="text-align:right">Plan ant.</th>
+                <th style="text-align:right">N+1</th>
+                <th class="ia" style="text-align:right;min-width:90px">Línea base IA ✦</th>
+                <th style="text-align:right">BB</th>
+                <th class="pf" style="text-align:right;min-width:78px">Plan final</th>
+                <th style="text-align:right">Var %</th>
+              </tr>
+            </thead>
+            <tbody id="fBody"></tbody>
+            <tfoot id="fFoot"></tfoot>
+          </table>
+        </div>
+        <div style="padding:10px 12px;font-size:11px;color:var(--t3);border-top:1px solid var(--bg);display:flex;align-items:center;gap:5px">
+          <i class="ti ti-sparkles" style="color:var(--blue)"></i>
+          ✦ Línea base generada por modelo predictivo &middot; datos históricos SAP actualizados automáticamente cada lunes
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN: BUILDING BLOCKS ===== -->
+    <div class="screen" id="screen-bb">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-size:13px;color:var(--t2)" id="bbSummary">4 ajustes registrados &middot; 2 pendientes de aprobación</div>
+        </div>
+        <div style="display:flex;gap:8px" id="bbBadges">
+          <span class="badge bg-green">2 aprobados</span>
+          <span class="badge bg-amber">2 en revisión</span>
+        </div>
+      </div>
+
+      <div class="bb-split">
+        <div class="bb-list" id="bbList"></div>
+        <div class="detail-panel">
+          <div class="card" id="detailPanel" style="display:none">
+            <div class="card-header">
+              <span class="card-title"><i class="ti ti-chart-bar" style="color:var(--blue)"></i> Impacto del ajuste</span>
+            </div>
+            <div class="card-body">
+              <div style="height:170px;margin-bottom:12px"><canvas id="chartBBImpact"></canvas></div>
+              <div id="detailMeta" style="font-size:12px;color:var(--t2);line-height:1.8"></div>
+            </div>
+          </div>
+          <div id="detailPlaceholder" style="background:var(--card);border:2px dashed var(--border);border-radius:10px;padding:30px;text-align:center;color:var(--t3)">
+            <i class="ti ti-hand-click" style="font-size:32px;display:block;margin-bottom:8px"></i>
+            <div style="font-size:13px">Selecciona un ajuste<br>para ver su impacto</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN: ACCURACY ===== -->
+    <div class="screen" id="screen-accuracy">
+      <div class="acc-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-trending-up" style="color:var(--green)"></i> Asertividad del pronóstico</span>
+            <span style="font-size:11px;color:var(--t3)">12 ciclos de Demanda</span>
+          </div>
+          <div class="card-body" style="height:220px"><canvas id="chartAccFull"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-award" style="color:var(--amber)"></i> Métricas del ciclo</span>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border-radius:8px">
+              <span style="font-size:13px;color:var(--t2)">Asertividad actual (jun)</span>
+              <span style="font-size:20px;font-weight:700;color:var(--navy)">87.4%</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border-radius:8px">
+              <span style="font-size:13px;color:var(--t2)">Meta corporativa</span>
+              <span style="font-size:20px;font-weight:700;color:var(--green)">90.0%</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border-radius:8px">
+              <span style="font-size:13px;color:var(--t2)">Brecha</span>
+              <span style="font-size:20px;font-weight:700;color:var(--amber)">&minus;2.6 pp</span>
+            </div>
+            <div style="padding:12px;background:#C6F6D5;border-radius:8px;font-size:12px;color:var(--dgreen)">
+              <strong>&#8593; Tendencia positiva:</strong> +5.2 pp en los últimos 6 ciclos gracias al proceso de Building Blocks
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><i class="ti ti-list-check" style="color:var(--blue)"></i> Asertividad por SKU &mdash; últimos 3 ciclos</span>
+          <span style="font-size:11px;color:var(--t3)">Con vs sin Building Blocks</span>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>SKU</th><th>Categoría</th><th>Canal</th><th style="text-align:right">Abr</th><th style="text-align:right">May</th><th style="text-align:right">Jun</th><th style="text-align:right">Tendencia</th><th style="text-align:right">Con BB</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Chocoramo Tajada (5x65g)</strong></td><td style="font-size:12px;color:var(--t3)">Ponqués</td><td style="font-size:12px">Tradicional</td><td style="text-align:right">84.1%</td><td style="text-align:right">86.3%</td><td style="text-align:right;font-weight:600;color:var(--green)">89.2%</td><td style="text-align:right"><span class="pill pill-up">&#8593; +5.1 pp</span></td><td style="text-align:right"><span class="badge bg-green">Sí</span></td></tr>
+            <tr><td><strong>Gansito Barrita (6x37g)</strong></td><td style="font-size:12px;color:var(--t3)">Ponqués</td><td style="font-size:12px">Tradicional</td><td style="text-align:right">81.5%</td><td style="text-align:right">84.8%</td><td style="text-align:right;font-weight:600;color:var(--green)">88.1%</td><td style="text-align:right"><span class="pill pill-up">&#8593; +6.6 pp</span></td><td style="text-align:right"><span class="badge bg-amber">Pendiente</span></td></tr>
+            <tr><td><strong>Tostacos Queso (12x25g)</strong></td><td style="font-size:12px;color:var(--t3)">Pasabocas</td><td style="font-size:12px">Tradicional</td><td style="text-align:right">79.2%</td><td style="text-align:right">82.0%</td><td style="text-align:right;font-weight:600;color:var(--amber)">83.4%</td><td style="text-align:right"><span class="pill pill-up">&#8593; +4.2 pp</span></td><td style="text-align:right"><span class="badge bg-green">Sí</span></td></tr>
+            <tr><td><strong>Maizitos Natural (12x30g)</strong></td><td style="font-size:12px;color:var(--t3)">Pasabocas</td><td style="font-size:12px">Tradicional</td><td style="text-align:right">86.7%</td><td style="text-align:right">87.1%</td><td style="text-align:right;font-weight:600;color:var(--green)">88.9%</td><td style="text-align:right"><span class="pill pill-up">&#8593; +2.2 pp</span></td><td style="text-align:right"><span class="badge bg-blue">No aplica</span></td></tr>
+            <tr><td><strong>Galletas Lecheritas (8x19g)</strong></td><td style="font-size:12px;color:var(--t3)">Galletas</td><td style="font-size:12px">Tradicional</td><td style="text-align:right">77.3%</td><td style="text-align:right">80.5%</td><td style="text-align:right;font-weight:600;color:var(--amber)">82.8%</td><td style="text-align:right"><span class="pill pill-up">&#8593; +5.5 pp</span></td><td style="text-align:right"><span class="badge bg-amber">Pendiente</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ============ DATA ============
+var skus=[
+  {id:1,n:'Chocoramo Tajada (5x65g)',cat:'Ponqués',canal:'Tradicional',pbo:450,n1:458,ia:465,bb:20,g:325,cop:9500,
+   reg:[{r:'Bogotá',pbo:170,ia:178,bb:8},{r:'Antioquia',pbo:135,ia:138,bb:7},{r:'Valle',pbo:92,ia:94,bb:3},{r:'Costa',pbo:53,ia:55,bb:2}]},
+  {id:2,n:'Chocoramo Tajada (5x65g)',cat:'Ponqués',canal:'Moderno',pbo:180,n1:183,ia:187,bb:0,g:325,cop:9500,
+   reg:[{r:'Bogotá',pbo:75,ia:78,bb:0},{r:'Antioquia',pbo:58,ia:60,bb:0},{r:'Valle',pbo:47,ia:49,bb:0}]},
+  {id:3,n:'Gansito Barrita (6x37g)',cat:'Ponqués',canal:'Tradicional',pbo:320,n1:315,ia:328,bb:15,g:222,cop:8000,
+   reg:[{r:'Bogotá',pbo:118,ia:121,bb:5},{r:'Antioquia',pbo:96,ia:99,bb:6},{r:'Valle',pbo:70,ia:72,bb:3},{r:'Costa',pbo:36,ia:36,bb:1}]},
+  {id:4,n:'Gala Tajada Surtido (5x60g)',cat:'Ponqués',canal:'Tradicional',pbo:280,n1:278,ia:285,bb:0,g:300,cop:8500,
+   reg:[{r:'Bogotá',pbo:105,ia:107,bb:0},{r:'Antioquia',pbo:84,ia:86,bb:0},{r:'Valle',pbo:91,ia:92,bb:0}]},
+  {id:5,n:'Ramo Torta Chocolate 900g',cat:'Ponqués',canal:'Moderno',pbo:42,n1:43,ia:44,bb:0,g:900,cop:28000,
+   reg:[{r:'Bogotá',pbo:18,ia:19,bb:0},{r:'Antioquia',pbo:14,ia:14,bb:0},{r:'Valle',pbo:10,ia:11,bb:0}]},
+  {id:6,n:'Tostacos Queso (12x25g)',cat:'Pasabocas',canal:'Tradicional',pbo:380,n1:384,ia:391,bb:-12,g:300,cop:12000,
+   reg:[{r:'Bogotá',pbo:140,ia:144,bb:-5},{r:'Antioquia',pbo:115,ia:118,bb:-4},{r:'Valle',pbo:80,ia:82,bb:-2},{r:'Costa',pbo:45,ia:47,bb:-1}]},
+  {id:7,n:'Maizitos Natural (12x30g)',cat:'Pasabocas',canal:'Tradicional',pbo:290,n1:295,ia:298,bb:0,g:360,cop:11500,
+   reg:[{r:'Bogotá',pbo:108,ia:111,bb:0},{r:'Antioquia',pbo:87,ia:89,bb:0},{r:'Valle',pbo:95,ia:98,bb:0}]},
+  {id:8,n:'Maizitos Natural (12x30g)',cat:'Pasabocas',canal:'Moderno',pbo:110,n1:112,ia:114,bb:0,g:360,cop:11500,
+   reg:[{r:'Bogotá',pbo:45,ia:46,bb:0},{r:'Antioquia',pbo:38,ia:39,bb:0},{r:'Valle',pbo:27,ia:29,bb:0}]},
+  {id:9,n:'Galletas Lecheritas (8x19g)',cat:'Galletas',canal:'Tradicional',pbo:220,n1:223,ia:228,bb:10,g:152,cop:6000,
+   reg:[{r:'Bogotá',pbo:82,ia:85,bb:4},{r:'Antioquia',pbo:66,ia:68,bb:3},{r:'Costa',pbo:72,ia:75,bb:3}]},
+  {id:10,n:'Galletas Limoncitas (8x19g)',cat:'Galletas',canal:'Tradicional',pbo:195,n1:198,ia:202,bb:0,g:152,cop:6000,
+   reg:[{r:'Bogotá',pbo:73,ia:75,bb:0},{r:'Antioquia',pbo:58,ia:60,bb:0},{r:'Costa',pbo:64,ia:67,bb:0}]}
+];
+var bbs=[
+  {area:'Comercial',ini:'CM',col:'#2E75B6',resp:'Andrés Molina',sku:'Chocoramo Tajada (5x65g)',reg:'Antioquia',tipo:1,motivo:'Trade deal con Éxito — activación punto de venta canal moderno Q3, exhibición en cabecera de góndola',val:20,estado:'Aprobado',fecha:'11/Jun 09:20',base:465,adj:485},
+  {area:'Marca – Ponqués',ini:'MP',col:'#1B3A6B',resp:'Camila Torres',sku:'Gansito Barrita (6x37g)',reg:'Nacional',tipo:1,motivo:'Campaña back-to-school jul–ago — activaciones en tiendas escolares y colegios, incremento est. 4%',val:15,estado:'En revisión',fecha:'13/Jun 14:15',base:328,adj:343},
+  {area:'Negocio Moderno',ini:'NM',col:'#5C6BC0',resp:'Juan Restrepo',sku:'Tostacos Queso (12x25g)',reg:'Valle del Cauca',tipo:-1,motivo:'Reducción espacio en góndola Jumbo/Metro Valle — reorganización de la categoría pasabocas por cadena',val:12,estado:'Aprobado',fecha:'10/Jun 09:20',base:391,adj:379},
+  {area:'Comercial',ini:'CM',col:'#2E75B6',resp:'Andrés Molina',sku:'Galletas Lecheritas (8x19g)',reg:'Costa Atlántica',tipo:1,motivo:'Pedido especial Olímpica — campaña temporada de playas · activación regional costa junio–agosto',val:10,estado:'En revisión',fecha:'13/Jun 10:42',base:228,adj:238}
+];
+
+var unit=0, expandedRow=null, selectedBB=null, bbImpactChart=null;
+
+// ============ NAVIGATION ============
+var screens={dashboard:'Dashboard',forecast:'Pronóstico por SKU',bb:'Building Blocks',accuracy:'Asertividad'};
+var subs={dashboard:'Resumen del ciclo de Demanda · Julio 2026',forecast:'Datos actualizados con línea base IA — semana 23',bb:'Ajustes colaborativos por área — Ciclo de Demanda · Julio 2026',accuracy:'Medición de exactitud vs ventas reales'};
+
+function showScreen(s){
+  Object.keys(screens).forEach(function(k){
+    document.getElementById('screen-'+k).classList.toggle('on',k===s);
+    document.getElementById('nav-'+k).classList.toggle('on',k===s);
+  });
+  document.getElementById('topTitle').textContent=screens[s];
+  document.getElementById('topSub').textContent=subs[s];
+  if(s==='forecast')renderForecast();
+  if(s==='bb')renderBB();
+  if(s==='accuracy')buildAccCharts();
+}
+
+// ============ NOTIFICATIONS ============
+function toggleNotif(){document.getElementById('notifPanel').classList.toggle('open');}
+document.addEventListener('click',function(e){
+  var p=document.getElementById('notifPanel');
+  if(p.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('.notif-btn'))p.classList.remove('open');
+});
+
+// ============ FORECAST ============
+function cv(r,v){return unit===0?v:unit===1?v*r.g/1000:v*r.cop/1000;}
+function fmt(v){return unit===0?Math.round(v).toLocaleString('es-CO'):v.toFixed(1);}
+function totFmt(rows,f){return fmt(rows.reduce(function(s,r){return s+cv(r,r[f]);},0));}
+function totPlanFmt(rows){return fmt(rows.reduce(function(s,r){return s+cv(r,r.ia+r.bb);},0));}
+function totBbFmt(rows){var v=rows.reduce(function(s,r){return s+cv(r,r.bb);},0);return v===0?'—':(v>0?'+':'')+fmt(v);}
+
+function setUnit(n){
+  unit=n;
+  [0,1,2].forEach(function(i){document.getElementById('u'+i).classList.toggle('on',i===n);});
+  renderForecast();
+}
+
+function renderForecast(){
+  var canal=document.getElementById('fCanal').value;
+  var cat=document.getElementById('fCat').value;
+  var rows=skus.filter(function(r){return(!canal||r.canal===canal)&&(!cat||r.cat===cat);});
+  var html='';
+  rows.forEach(function(r,idx){
+    var plan=r.ia+r.bb;
+    var vp=((plan-r.pbo)/r.pbo*100);
+    var vc=vp>0?'var(--green)':vp<0?'var(--red)':'var(--t3)';
+    var bc=r.bb>0?'var(--green)':r.bb<0?'var(--red)':'var(--t3)';
+    var n1diff=((r.n1-r.pbo)/r.pbo*100);
+    var n1pill=n1diff>2?'<span class="pill pill-up">&#8593;</span>':n1diff<-2?'<span class="pill pill-dn">&#8595;</span>':'<span class="pill pill-eq">&rarr;</span>';
+    html+='<tr class="expandable" onclick="toggleExpand('+r.id+')">';
+    html+='<td style="font-weight:600"><i class="ti ti-chevron-right" id="chev-'+r.id+'" style="font-size:12px;color:var(--t3);transition:transform .2s;margin-right:4px"></i>'+r.n+'</td>';
+    html+='<td style="font-size:12px;color:var(--t3)">'+r.cat+'</td>';
+    html+='<td style="font-size:12px">'+r.canal+'</td>';
+    html+='<td style="text-align:right">'+fmt(cv(r,r.pbo))+'</td>';
+    html+='<td style="text-align:right">'+fmt(cv(r,r.n1))+'&nbsp;'+n1pill+'</td>';
+    html+='<td class="ia" style="text-align:right">'+fmt(cv(r,r.ia))+'</td>';
+    html+='<td style="text-align:right;color:'+bc+'">'+(r.bb!==0?(r.bb>0?'+':'')+fmt(cv(r,r.bb)):'—')+'</td>';
+    html+='<td class="pf" style="text-align:right">'+fmt(cv(r,plan))+'</td>';
+    html+='<td style="text-align:right;font-weight:600;color:'+vc+'">'+(vp>0?'+':'')+vp.toFixed(1)+'%</td>';
+    html+='</tr>';
+    html+='<tr class="expand-row" id="exp-'+r.id+'"><td colspan="9"><div class="expand-inner" id="expinner-'+r.id+'">';
+    html+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-left:20px">Desglose por regional</div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    html+='<tr style="background:#EDF2F7"><th style="padding:5px 20px;text-align:left;font-weight:500">Regional</th><th style="padding:5px 10px;text-align:right;font-weight:500">Plan ant.</th><th style="padding:5px 10px;text-align:right;font-weight:500;color:var(--navy)">Línea base IA</th><th style="padding:5px 10px;text-align:right;font-weight:500">BB</th><th style="padding:5px 10px;text-align:right;font-weight:500;color:var(--navy)">Plan final</th></tr>';
+    r.reg.forEach(function(rg){
+      html+='<tr><td style="padding:5px 20px">'+rg.r+'</td><td style="padding:5px 10px;text-align:right">'+rg.pbo+'</td><td style="padding:5px 10px;text-align:right;color:var(--navy);font-weight:500">'+rg.ia+'</td><td style="padding:5px 10px;text-align:right;color:'+(rg.bb>0?'var(--green)':rg.bb<0?'var(--red)':'var(--t3)')+'">'+(rg.bb!==0?(rg.bb>0?'+':'')+rg.bb:'—')+'</td><td style="padding:5px 10px;text-align:right;font-weight:600">'+(rg.ia+rg.bb)+'</td></tr>';
+    });
+    html+='</table></div></td></tr>';
+  });
+  document.getElementById('fBody').innerHTML=html;
+
+  var tbb=rows.reduce(function(s,r){return s+cv(r,r.bb);},0);
+  var tv=((rows.reduce(function(s,r){return s+r.ia+r.bb;},0)-rows.reduce(function(s,r){return s+r.pbo;},0))/rows.reduce(function(s,r){return s+r.pbo;},0)*100);
+  document.getElementById('fFoot').innerHTML='<tr><td colspan="3" style="font-size:11px;color:var(--t3)">TOTAL '+rows.length+' SKUs</td><td style="text-align:right">'+totFmt(rows,'pbo')+'</td><td style="text-align:right">'+totFmt(rows,'n1')+'</td><td class="ia" style="text-align:right">'+totFmt(rows,'ia')+'</td><td style="text-align:right;color:'+(tbb>0?'var(--green)':tbb<0?'var(--red)':'var(--t3)')+'">'+totBbFmt(rows)+'</td><td class="pf" style="text-align:right">'+totPlanFmt(rows)+'</td><td style="text-align:right;color:'+(tv>0?'var(--green)':'var(--red)')+'">'+(tv>0?'+':'')+tv.toFixed(1)+'%</td></tr>';
+  expandedRow=null;
+}
+
+function toggleExpand(id){
+  var inner=document.getElementById('expinner-'+id);
+  var chev=document.getElementById('chev-'+id);
+  if(!inner)return;
+  var isOpen=inner.classList.contains('open');
+  document.querySelectorAll('.expand-inner').forEach(function(el){el.classList.remove('open');});
+  document.querySelectorAll('[id^="chev-"]').forEach(function(el){el.style.transform='';});
+  if(!isOpen){inner.classList.add('open');chev.style.transform='rotate(90deg)';}
+}
+
+// ============ BUILDING BLOCKS ============
+function renderBB(){
+  var apr=bbs.filter(function(b){return b.estado==='Aprobado';}).length;
+  var rev=bbs.filter(function(b){return b.estado==='En revisión';}).length;
+  var rej=bbs.filter(function(b){return b.estado==='Rechazado';}).length;
+  document.getElementById('bbSummary').textContent=bbs.length+' ajustes registrados · '+rev+' pendiente'+(rev!==1?'s':'')+' de aprobación';
+  document.getElementById('bbBadges').innerHTML=(apr?'<span class="badge bg-green">'+apr+' aprobado'+(apr!==1?'s':'')+'</span>':'')+(rev?'<span class="badge bg-amber">'+rev+' en revisión</span>':'')+(rej?'<span class="badge bg-red">'+rej+' rechazado'+(rej!==1?'s':'')+'</span>':'');
+  document.getElementById('navBadge').textContent=rev||'';
+  document.getElementById('navBadge').style.display=rev?'':'none';
+  document.getElementById('dashPend').textContent=rev;
+  document.getElementById('chartRevN').textContent=rev;
+  document.getElementById('chartRejN').textContent=rej;
+  if(chartBBStatus)chartBBStatus.data.datasets[0].data=[apr,rev,rej];chartBBStatus&&chartBBStatus.update();
+
+  var html=bbs.map(function(b,i){
+    var ok=b.estado==='Aprobado', rej2=b.estado==='Rechazado';
+    var bc=ok?'bg-green':rej2?'bg-red':'bg-amber';
+    var vc=b.tipo>0?'var(--green)':'var(--red)', vs=b.tipo>0?'+':'−';
+    var selected=(selectedBB===i)?'selected':'';
+    return '<div class="bb-card '+selected+'" id="bbc-'+i+'" onclick="selectBB('+i+')">'
+      +'<div style="display:flex;align-items:flex-start;gap:12px">'
+      +'<div class="bb-avatar" style="background:'+b.col+'">'+b.ini+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">'
+      +'<span style="font-weight:600;font-size:14px">'+b.area+'</span>'
+      +'<span class="badge '+bc+'">'+b.estado+'</span>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--t2);margin-bottom:6px">'+b.resp+'</div>'
+      +'<div style="font-size:12px;color:var(--t3);margin-bottom:8px;line-height:1.5">'+b.motivo+'</div>'
+      +'<div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">'
+      +'<span><span style="color:var(--t3)">SKU:</span> <strong>'+b.sku+'</strong></span>'
+      +'<span><span style="color:var(--t3)">Regional:</span> '+b.reg+'</span>'
+      +'<span style="color:'+vc+';font-weight:600">'+vs+b.val+' mil und.</span>'
+      +'<span style="color:var(--t3)">'+b.fecha+'</span>'
+      +'</div></div></div>'
+      +((!ok&&!rej2)?'<div class="bb-actions"><button class="btn-no" onclick="bbAction(event,'+i+',false)">Rechazar</button><button class="btn-ok" onclick="bbAction(event,'+i+',true)">Aprobar</button></div>':'')
+      +'</div>';
+  }).join('');
+  document.getElementById('bbList').innerHTML=html;
+}
+
+function selectBB(i){
+  selectedBB=i;
+  document.querySelectorAll('.bb-card').forEach(function(el,j){el.classList.toggle('selected',j===i);});
+  var b=bbs[i];
+  document.getElementById('detailPanel').style.display='block';
+  document.getElementById('detailPlaceholder').style.display='none';
+  document.getElementById('detailMeta').innerHTML=
+    '<table style="width:100%"><tr><td style="color:var(--t3)">SKU</td><td style="font-weight:500">'+b.sku+'</td></tr>'
+    +'<tr><td style="color:var(--t3)">Regional</td><td>'+b.reg+'</td></tr>'
+    +'<tr><td style="color:var(--t3)">Área</td><td>'+b.area+' &mdash; '+b.resp+'</td></tr>'
+    +'<tr><td style="color:var(--t3)">Ajuste</td><td style="font-weight:600;color:'+(b.tipo>0?'var(--green)':'var(--red)')+'">'+(b.tipo>0?'+':'−')+b.val+' mil und.</td></tr>'
+    +'<tr><td style="color:var(--t3)">Fecha</td><td>'+b.fecha+'</td></tr></table>';
+  if(bbImpactChart)bbImpactChart.destroy();
+  var ctx=document.getElementById('chartBBImpact').getContext('2d');
+  bbImpactChart=new Chart(ctx,{type:'bar',data:{labels:['Línea base IA','Plan final (con BB)'],datasets:[{data:[b.base,b.adj],backgroundColor:['#BEE3F8','#1B3A6B'],borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw.toLocaleString('es-CO')+' mil und.';}}}}  ,scales:{y:{beginAtZero:false,ticks:{font:{size:10}},min:Math.round(Math.min(b.base,b.adj)*0.95)}}}});
+}
+
+function bbAction(e,i,approve){
+  e.stopPropagation();
+  bbs[i].estado=approve?'Aprobado':'Rechazado';
+  renderBB();
+  if(selectedBB===i)selectBB(i);
+}
+
+// ============ CHARTS ============
+var chartBBStatus=null, accTrendChart=null, catCompChart=null, accFullChart=null;
+
+function buildDashCharts(){
+  var apr=bbs.filter(function(b){return b.estado==='Aprobado';}).length;
+  var rev=bbs.filter(function(b){return b.estado==='En revisión';}).length;
+  var rej=bbs.filter(function(b){return b.estado==='Rechazado';}).length;
+
+  if(chartBBStatus)chartBBStatus.destroy();
+  chartBBStatus=new Chart(document.getElementById('chartBBStatus').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['Aprobados','En revisión','Rechazados'],datasets:[{data:[apr,rev,rej],backgroundColor:['#38A169','#D69E2E','#FC8181'],borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw;}}}}}
+  });
+
+  if(accTrendChart)accTrendChart.destroy();
+  accTrendChart=new Chart(document.getElementById('chartAccTrend').getContext('2d'),{
+    type:'line',
+    data:{
+      labels:['Ene','Feb','Mar','Abr','May','Jun'],
+      datasets:[{label:'Asertividad %',data:[82.1,81.8,83.5,84.2,85.6,87.4],borderColor:'#1B3A6B',backgroundColor:'rgba(27,58,107,.08)',fill:true,tension:.4,pointBackgroundColor:'#1B3A6B',pointRadius:4,borderWidth:2}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:78,max:92,ticks:{font:{size:10},callback:function(v){return v+'%';}}},x:{ticks:{font:{size:10}}}}}
+  });
+}
+
+function buildCatChart(){
+  if(catCompChart)catCompChart.destroy();
+  catCompChart=new Chart(document.getElementById('chartCatComp').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:['Ponqués – Trad.','Ponqués – Moderno','Pasabocas – Trad.','Pasabocas – Moderno','Galletas – Trad.'],
+      datasets:[
+        {label:'Plan anterior',data:[1050,222,670,110,415],backgroundColor:'#BEE3F8',borderRadius:4,borderSkipped:false},
+        {label:'N+1',data:[1051,226,679,112,421],backgroundColor:'#90CDF4',borderRadius:4,borderSkipped:false},
+        {label:'Plan final (IA + BB)',data:[1083,231,677,114,430],backgroundColor:'#1B3A6B',borderRadius:4,borderSkipped:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{y:{beginAtZero:false,min:80,ticks:{font:{size:10}}},x:{ticks:{font:{size:11}}}}}
+  });
+}
+
+function buildAccCharts(){
+  if(accFullChart)accFullChart.destroy();
+  accFullChart=new Chart(document.getElementById('chartAccFull').getContext('2d'),{
+    type:'line',
+    data:{
+      labels:['Jul','Ago','Sep','Oct','Nov','Dic','Ene','Feb','Mar','Abr','May','Jun'],
+      datasets:[
+        {label:'Asertividad real',data:[80.2,79.5,81.3,82.8,82.1,81.8,83.5,84.2,85.0,84.2,85.6,87.4],borderColor:'#1B3A6B',backgroundColor:'rgba(27,58,107,.07)',fill:true,tension:.4,pointBackgroundColor:'#1B3A6B',pointRadius:3,borderWidth:2},
+        {label:'Meta (90%)',data:[90,90,90,90,90,90,90,90,90,90,90,90],borderColor:'#38A169',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{y:{min:76,max:93,ticks:{font:{size:10},callback:function(v){return v+'%';}}},x:{ticks:{font:{size:10}}}}}
+  });
+}
+
+// ============ INIT ============
+window.addEventListener('load',function(){
+  buildDashCharts();
+  renderForecast();
+  buildCatChart();
+  renderBB();
+  buildAccCharts();
+});
+</script>
+</body>
+</html>

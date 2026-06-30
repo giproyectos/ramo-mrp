@@ -1,0 +1,904 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cómo funciona — Piloto Gestión Demanda RAMO</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --navy:#1B3A6B;--blue:#2E75B6;--lblue:#EBF4FF;
+  --green:#38A169;--lgreen:#C6F6D5;--dgreen:#276749;
+  --amber:#D69E2E;--lamber:#FFFBEB;--damber:#744210;
+  --red:#E53E3E;--bg:#F0F4F9;--card:#fff;
+  --border:#E2E8F0;--t1:#1A202C;--t2:#4A5568;--t3:#A0AEC0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:var(--t1);line-height:1.6}
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#fff;border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;gap:0;height:52px;overflow-x:auto}
+.nav-brand{font-weight:700;color:var(--navy);font-size:14px;margin-right:24px;white-space:nowrap;flex-shrink:0}
+.nav-step{display:flex;align-items:center;gap:6px;padding:0 10px;height:52px;font-size:12px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s;flex-shrink:0}
+.nav-step:hover{color:var(--t2)}
+.nav-step.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:600}
+.nav-step .dot{width:20px;height:20px;border-radius:50%;background:var(--border);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.nav-step.active .dot{background:var(--navy)}
+.nav-step.done .dot{background:var(--green)}
+
+/* SECTIONS */
+.section{min-height:100vh;display:flex;align-items:center;padding:80px 0 60px;scroll-margin-top:52px}
+.section:nth-child(odd){background:#fff}
+.section:nth-child(even){background:var(--bg)}
+.container{max-width:960px;margin:0 auto;padding:0 40px;width:100%}
+.section-num{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.section-title{font-size:34px;font-weight:700;color:var(--navy);line-height:1.2;margin-bottom:16px}
+.section-lead{font-size:17px;color:var(--t2);max-width:620px;margin-bottom:32px;line-height:1.7}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+
+/* CALLOUT */
+.callout{border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-ramo{background:#EBF4FF;border-left:4px solid var(--blue)}
+.callout-ai{background:#F0FFF4;border-left:4px solid var(--green)}
+.callout-warn{background:var(--lamber);border-left:4px solid var(--amber)}
+.callout-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+.callout-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.callout-text{font-size:14px;color:var(--t2);line-height:1.6}
+
+/* FLOW DIAGRAM */
+.flow{display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;margin-bottom:32px}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-width:110px}
+.flow-circle{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.flow-label{font-size:12px;font-weight:500;text-align:center;color:var(--t2);line-height:1.3}
+.flow-sub{font-size:10px;text-align:center;color:var(--t3)}
+.flow-arrow{font-size:20px;color:var(--t3);flex-shrink:0;margin:0 4px;margin-bottom:30px}
+
+/* ANNOTATION BOX */
+.anno{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.anno-header{background:var(--navy);color:#fff;padding:8px 14px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px}
+.anno-body{padding:16px}
+.anno-row{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+.anno-num{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.anno-text{font-size:13px;color:var(--t2);line-height:1.5}
+.anno-text strong{color:var(--t1)}
+
+/* FAKE TABLE */
+.fake-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+.fake-tbl th{background:var(--navy);color:#fff;padding:7px 9px;text-align:left;font-size:11px;white-space:nowrap}
+.fake-tbl td{padding:7px 9px;border-bottom:1px solid var(--bg);white-space:nowrap}
+.fake-tbl td.hl{background:var(--lblue);color:var(--navy);font-weight:600}
+.fake-tbl td.hldark{background:var(--navy);color:#fff;font-weight:600}
+.fake-tbl tr:last-child td{border-bottom:none}
+.col-tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin-left:4px}
+
+/* DATA FLOW DIAGRAM */
+.dflow{display:flex;flex-direction:column;gap:0}
+.dflow-node{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.dflow-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.dflow-title{font-size:13px;font-weight:600;color:var(--t1)}
+.dflow-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.dflow-arrow{text-align:center;font-size:20px;color:var(--t3);padding:4px 0}
+
+/* BB CARD MINI */
+.bb-mini{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;gap:10px}
+.bb-mini-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.bb-mini-title{font-size:13px;font-weight:600}
+.bb-mini-sub{font-size:12px;color:var(--t3);line-height:1.4;margin-top:2px}
+.bb-mini-val{font-size:12px;font-weight:600;margin-top:4px}
+
+/* CARD GRID */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card-item-icon{font-size:28px;margin-bottom:10px;display:block}
+.card-item-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:6px}
+.card-item-text{font-size:13px;color:var(--t2);line-height:1.5}
+
+/* PROCESS STEPS */
+.pstep{display:flex;gap:16px;margin-bottom:24px}
+.pstep-num{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.pstep-title{font-size:15px;font-weight:600;color:var(--t1);margin-bottom:4px}
+.pstep-text{font-size:14px;color:var(--t2);line-height:1.6}
+
+/* COMPARISON TABLE */
+.comp-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.comp-tbl th{padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);border-bottom:2px solid var(--border)}
+.comp-tbl td{padding:10px 14px;border-bottom:1px solid var(--bg);vertical-align:top}
+.comp-tbl td:first-child{font-weight:500;color:var(--t2);width:30%}
+.comp-tbl td.before{color:var(--red)}
+.comp-tbl td.after{color:var(--dgreen);font-weight:500}
+
+/* ACCURACY */
+.acc-bar{height:12px;border-radius:6px;background:var(--bg);overflow:hidden;margin-top:6px}
+.acc-fill{height:100%;border-radius:6px;transition:width .3s}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.bg-navy{background:var(--lblue);color:var(--navy)}
+.bg-green{background:var(--lgreen);color:var(--dgreen)}
+.bg-amber{background:var(--lamber);color:var(--damber)}
+
+/* FINAL CTA */
+.cta-box{background:var(--navy);color:#fff;border-radius:12px;padding:32px 36px;text-align:center}
+.cta-title{font-size:26px;font-weight:700;margin-bottom:12px}
+.cta-sub{font-size:16px;opacity:.8;margin-bottom:24px}
+.cta-pills{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.cta-pill{background:rgba(255,255,255,.12);color:#fff;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500}
+
+/* SCROLL SMOOTH */
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="nav">
+  <span class="nav-brand">RAMO — Piloto Demanda</span>
+  <a class="nav-step active" href="#s1" onclick="setActive(this)">
+    <span class="dot">1</span> El problema
+  </a>
+  <a class="nav-step" href="#s2" onclick="setActive(this)">
+    <span class="dot">2</span> La solución
+  </a>
+  <a class="nav-step" href="#s3" onclick="setActive(this)">
+    <span class="dot">3</span> Dashboard
+  </a>
+  <a class="nav-step" href="#s4" onclick="setActive(this)">
+    <span class="dot">4</span> Línea base IA
+  </a>
+  <a class="nav-step" href="#s5" onclick="setActive(this)">
+    <span class="dot">5</span> Pronóstico
+  </a>
+  <a class="nav-step" href="#s6" onclick="setActive(this)">
+    <span class="dot">6</span> Building Blocks
+  </a>
+  <a class="nav-step" href="#s7" onclick="setActive(this)">
+    <span class="dot">7</span> SAP &amp; Cierre
+  </a>
+  <a class="nav-step" href="#s8" onclick="setActive(this)">
+    <span class="dot">8</span> Asertividad
+  </a>
+  <a class="nav-step" href="#s9" onclick="setActive(this)">
+    <span class="dot">9</span> Resumen
+  </a>
+</nav>
+
+
+<!-- =================== SECCIÓN 1: EL PROBLEMA =================== -->
+<section class="section" id="s1">
+  <div class="container">
+    <div class="section-num">Sección 1 de 9</div>
+    <div class="section-title">¿Cuál es el problema hoy?</div>
+    <div class="section-lead">Cada mes RAMO necesita planificar cuánto va a producir y distribuir de cada uno de sus productos. Ese proceso hoy depende casi completamente de Excel y correos.</div>
+
+    <div class="two-col">
+      <div>
+        <div class="pstep">
+          <div class="pstep-num">1</div>
+          <div>
+            <div class="pstep-title">Diana descarga datos de SAP</div>
+            <div class="pstep-text">Exporta ventas históricas de SAP a Excel. Esto puede tomar horas y requiere conocer las transacciones correctas.</div>
+          </div>
+        </div>
+        <div class="pstep">
+          <div class="pstep-num">2</div>
+          <div>
+            <div class="pstep-title">Construye el pronóstico a mano</div>
+            <div class="pstep-text">Con tablas dinámicas y su experiencia, Diana estima cuánto va a vender cada producto en cada canal y regional.</div>
+          </div>
+        </div>
+        <div class="pstep">
+          <div class="pstep-num">3</div>
+          <div>
+            <div class="pstep-title">Recoge ajustes por correo y chat</div>
+            <div class="pstep-text">Comercial, Marca y Negocio Moderno envían sus cambios por Teams o correo. Diana los busca, los interpreta y los consolida manualmente.</div>
+          </div>
+        </div>
+        <div class="pstep">
+          <div class="pstep-num">4</div>
+          <div>
+            <div class="pstep-title">Carga el plan a SAP (MD61)</div>
+            <div class="pstep-text">Diana vuelve a SAP y carga registro por registro el plan aprobado. Si hay un error, hay que volver a empezar.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="callout callout-warn">
+          <span class="callout-icon">⚠️</span>
+          <div>
+            <div class="callout-title">Los costos ocultos del proceso actual</div>
+            <div class="callout-text">
+              <strong>Tiempo:</strong> el ciclo completo puede tomar varios días, con mucho tiempo dedicado a tareas que no agregan valor (copiar, pegar, consolidar).<br><br>
+              <strong>Errores:</strong> la carga manual a SAP introduce errores humanos difíciles de rastrear.<br><br>
+              <strong>Sin trazabilidad:</strong> si el mes que viene el plan estuvo mal, no hay forma clara de saber <em>quién pidió qué ajuste y por qué</em>.<br><br>
+              <strong>Sin aprendizaje:</strong> el sistema no mide si los ajustes de Comercial o de Marca mejoran o empeoran el pronóstico.
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-ramo">
+          <span class="callout-icon" style="color:var(--navy)"><i class="ti ti-bulb"></i></span>
+          <div>
+            <div class="callout-title" style="color:var(--navy)">¿Qué cambia con el piloto?</div>
+            <div class="callout-text">El piloto no cambia <em>qué</em> hace Diana — cambia <em>cómo</em> lo hace. Mismas decisiones, mismo proceso, pero en una herramienta digital que automatiza las partes repetitivas y da visibilidad a todo el equipo en tiempo real.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =================== SECCIÓN 2: LA SOLUCIÓN =================== -->
+<section class="section" id="s2">
+  <div class="container">
+    <div class="section-num">Sección 2 de 9</div>
+    <div class="section-title">La solución en una imagen</div>
+    <div class="section-lead">El piloto digitaliza el ciclo mensual de Demanda de principio a fin. Este ciclo es la primera etapa del proceso PVO (Planificación de Ventas y Operaciones) de RAMO — el resultado alimenta directamente a DRP, MPS y MRP en SAP. Son 5 etapas claras, y la herramienta guía a Diana y a su equipo a través de cada una.</div>
+
+    <div class="flow" style="margin-bottom:36px">
+      <div class="flow-step">
+        <div class="flow-circle" style="background:#EBF4FF;color:var(--navy)"><i class="ti ti-brain"></i></div>
+        <div class="flow-label">Línea base IA</div>
+        <div class="flow-sub">El modelo genera la propuesta inicial automáticamente</div>
+      </div>
+      <div class="flow-arrow"><i class="ti ti-arrow-right"></i></div>
+      <div class="flow-step">
+        <div class="flow-circle" style="background:#FEFCBF;color:var(--damber)"><i class="ti ti-eye"></i></div>
+        <div class="flow-label">Revisión Comercial</div>
+        <div class="flow-sub">Diana y Comercial revisan la propuesta</div>
+      </div>
+      <div class="flow-arrow"><i class="ti ti-arrow-right"></i></div>
+      <div class="flow-step">
+        <div class="flow-circle" style="background:#BEE3F8;color:var(--blue)"><i class="ti ti-git-merge"></i></div>
+        <div class="flow-label">Building Blocks</div>
+        <div class="flow-sub">Cada área envía sus ajustes justificados</div>
+      </div>
+      <div class="flow-arrow"><i class="ti ti-arrow-right"></i></div>
+      <div class="flow-step">
+        <div class="flow-circle" style="background:#C6F6D5;color:var(--dgreen)"><i class="ti ti-user-check"></i></div>
+        <div class="flow-label">Aprobación</div>
+        <div class="flow-sub">Diana aprueba el plan final</div>
+      </div>
+      <div class="flow-arrow"><i class="ti ti-arrow-right"></i></div>
+      <div class="flow-step">
+        <div class="flow-circle" style="background:#FED7D7;color:var(--red)"><i class="ti ti-database-import"></i></div>
+        <div class="flow-label">Carga SAP MD61</div>
+        <div class="flow-sub">Automática, sin carga manual</div>
+      </div>
+    </div>
+
+    <div class="three-col">
+      <div class="card-item">
+        <span class="card-item-icon"><i class="ti ti-clock" style="color:var(--blue)"></i></span>
+        <div class="card-item-title">Ahorro de tiempo</div>
+        <div class="card-item-text">Las tareas repetitivas (descargar datos, consolidar correos, cargar a SAP) se automatizan. Diana invierte su tiempo en decisiones, no en copiar y pegar.</div>
+      </div>
+      <div class="card-item">
+        <span class="card-item-icon"><i class="ti ti-eye" style="color:var(--green)"></i></span>
+        <div class="card-item-title">Visibilidad total</div>
+        <div class="card-item-text">Todos los ajustes quedan registrados con nombre, fecha, motivo y responsable. Si algo sale mal, se sabe exactamente qué pasó y por qué.</div>
+      </div>
+      <div class="card-item">
+        <span class="card-item-icon"><i class="ti ti-trending-up" style="color:var(--amber)"></i></span>
+        <div class="card-item-title">Aprendizaje continuo</div>
+        <div class="card-item-text">El sistema mide mes a mes qué tan exacto fue el pronóstico. Eso permite mejorar el modelo y disciplinar el proceso colaborativo.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =================== SECCIÓN 3: DASHBOARD =================== -->
+<section class="section" id="s3">
+  <div class="container">
+    <div class="section-num">Sección 3 de 9</div>
+    <div class="section-title">Pantalla 1: El Dashboard</div>
+    <div class="section-lead">Es la primera pantalla que Diana ve al entrar a la herramienta. De un vistazo, sabe exactamente en qué punto del ciclo está y qué falta por hacer.</div>
+
+    <div class="two-col">
+      <div>
+        <div class="anno">
+          <div class="anno-header"><i class="ti ti-layout-dashboard"></i> Dashboard — Ciclo de Demanda · Julio 2026</div>
+          <div class="anno-body">
+            <!-- Fake cycle tracker -->
+            <div style="background:var(--bg);border-radius:8px;padding:12px 14px;margin-bottom:12px">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Flujo del ciclo</div>
+              <div style="display:flex;align-items:center;gap:2px">
+                <div style="text-align:center;flex:1">
+                  <div style="width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;margin:0 auto"><i class="ti ti-check"></i></div>
+                  <div style="font-size:9px;color:var(--t3);margin-top:4px">IA</div>
+                </div>
+                <div style="flex:1;height:2px;background:var(--navy);margin-bottom:14px"></div>
+                <div style="text-align:center;flex:1">
+                  <div style="width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;margin:0 auto"><i class="ti ti-check"></i></div>
+                  <div style="font-size:9px;color:var(--t3);margin-top:4px">Comercial</div>
+                </div>
+                <div style="flex:1;height:2px;background:var(--blue);margin-bottom:14px"></div>
+                <div style="text-align:center;flex:1">
+                  <div style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin:0 auto">BB</div>
+                  <div style="font-size:9px;color:var(--blue);font-weight:600;margin-top:4px">← Hoy</div>
+                </div>
+                <div style="flex:1;height:2px;background:var(--border);margin-bottom:14px"></div>
+                <div style="text-align:center;flex:1">
+                  <div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--t3);margin:0 auto"><i class="ti ti-user-check"></i></div>
+                  <div style="font-size:9px;color:var(--t3);margin-top:4px">Aprobación</div>
+                </div>
+                <div style="flex:1;height:2px;background:var(--border);margin-bottom:14px"></div>
+                <div style="text-align:center;flex:1">
+                  <div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--t3);margin:0 auto"><i class="ti ti-database-import"></i></div>
+                  <div style="font-size:9px;color:var(--t3);margin-top:4px">SAP MD61</div>
+                </div>
+              </div>
+            </div>
+            <!-- Fake metrics -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <div style="background:var(--bg);border-radius:6px;padding:10px 12px">
+                <div style="font-size:9px;color:var(--t3)">SKUs en ciclo</div>
+                <div style="font-size:20px;font-weight:700;color:var(--navy)">847</div>
+              </div>
+              <div style="background:var(--bg);border-radius:6px;padding:10px 12px">
+                <div style="font-size:9px;color:var(--t3)">Asertividad junio</div>
+                <div style="font-size:20px;font-weight:700;color:var(--green)">87.4%</div>
+              </div>
+              <div style="background:var(--bg);border-radius:6px;padding:10px 12px">
+                <div style="font-size:9px;color:var(--t3)">Var. vs plan ant.</div>
+                <div style="font-size:20px;font-weight:700;color:var(--green)">+3.2%</div>
+              </div>
+              <div style="background:#FFFBEB;border-radius:6px;padding:10px 12px">
+                <div style="font-size:9px;color:var(--t3)">BB pendientes</div>
+                <div style="font-size:20px;font-weight:700;color:var(--amber)">2</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="anno-row">
+          <div class="anno-num">1</div>
+          <div class="anno-text"><strong>Barra de progreso del ciclo:</strong> muestra en qué etapa está el ciclo de Demanda ahora mismo — igual que el semáforo de pasos que Diana lleva mentalmente, pero visible para todo el equipo.</div>
+        </div>
+        <div class="anno-row">
+          <div class="anno-num">2</div>
+          <div class="anno-text"><strong>Las 4 métricas clave:</strong> de un vistazo Diana ve cuántos SKUs están en el ciclo, cómo viene la variación frente al mes anterior, la asertividad del ciclo pasado, y cuántos Building Blocks están pendientes de su aprobación.</div>
+        </div>
+        <div class="anno-row">
+          <div class="anno-num">3</div>
+          <div class="anno-text"><strong>Tabla de áreas:</strong> Diana ve el estado de cada área — quién ya envió sus ajustes y quién falta. Hoy tiene que llamar o mandar mensaje. Con la herramienta, lo ve en segundos.</div>
+        </div>
+
+        <div class="callout callout-ramo" style="margin-top:20px">
+          <span class="callout-icon" style="color:var(--navy)"><i class="ti ti-building-store"></i></span>
+          <div>
+            <div class="callout-title" style="color:var(--navy)">Para RAMO significa</div>
+            <div class="callout-text">Diana empieza cada día de ciclo sabiendo exactamente qué está bloqueado, quién falta y cuánto tiempo queda. Ya no tiene que preguntar estado por estado.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =================== SECCIÓN 4: LÍNEA BASE IA =================== -->
+<section class="section" id="s4">
+  <div class="container">
+    <div class="section-num">Sección 4 de 9</div>
+    <div class="section-title">La Línea Base con IA — ¿cómo funciona?</div>
+    <div class="section-lead">Antes de que cualquier persona intervenga, el sistema genera automáticamente una propuesta de cuánto vender el próximo mes para cada producto y canal. A esto le llamamos la <strong>Línea Base</strong>.</div>
+
+    <div class="two-col" style="align-items:center">
+      <div>
+        <div class="dflow">
+          <div class="dflow-node">
+            <div class="dflow-icon" style="background:#FEE2E2;color:var(--red)"><i class="ti ti-database"></i></div>
+            <div>
+              <div class="dflow-title">SAP — Histórico de ventas</div>
+              <div class="dflow-sub">Ventas reales de los últimos 24 meses por SKU, canal y regional. Se actualiza automáticamente cada lunes.</div>
+            </div>
+          </div>
+          <div class="dflow-arrow">↓</div>
+          <div class="dflow-node">
+            <div class="dflow-icon" style="background:#FEFCBF;color:var(--damber)"><i class="ti ti-calendar"></i></div>
+            <div>
+              <div class="dflow-title">Variables estacionales y externas</div>
+              <div class="dflow-sub">Días hábiles del mes, festivos, temporadas (regreso a clases, vacaciones, fin de año), tendencias por categoría.</div>
+            </div>
+          </div>
+          <div class="dflow-arrow">↓</div>
+          <div class="dflow-node" style="border-color:var(--blue);background:var(--lblue)">
+            <div class="dflow-icon" style="background:var(--blue);color:#fff"><i class="ti ti-brain"></i></div>
+            <div>
+              <div class="dflow-title" style="color:var(--navy)">Modelo predictivo</div>
+              <div class="dflow-sub">Analiza patrones históricos y genera la propuesta de demanda para el próximo ciclo. Funciona para los 847 SKUs simultáneamente.</div>
+            </div>
+          </div>
+          <div class="dflow-arrow">↓</div>
+          <div class="dflow-node" style="border-color:var(--green);background:#F0FFF4">
+            <div class="dflow-icon" style="background:var(--green);color:#fff"><i class="ti ti-file-check"></i></div>
+            <div>
+              <div class="dflow-title" style="color:var(--dgreen)">Línea base lista para revisión</div>
+              <div class="dflow-sub">La propuesta aparece en la herramienta el lunes de inicio de ciclo. Diana la ve, la compara con el plan anterior y el N+1, y decide si ajustar.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="callout callout-ai" style="margin-bottom:20px">
+          <span class="callout-icon">🤖</span>
+          <div>
+            <div class="callout-title" style="color:var(--dgreen)">¿Qué tipo de IA es?</div>
+            <div class="callout-text">Es un modelo de <strong>pronóstico de series de tiempo</strong> — la misma técnica que usan Netflix para prever cuántos usuarios verán una serie o Amazon para saber cuánto stock pedir. Analiza los patrones del pasado para predecir el futuro.<br><br>No inventa — <em>extrapola con criterio</em> a partir de lo que ya pasó.</div>
+          </div>
+        </div>
+
+        <div class="callout callout-ramo">
+          <span class="callout-icon" style="color:var(--navy)"><i class="ti ti-building-store"></i></span>
+          <div>
+            <div class="callout-title" style="color:var(--navy)">Para RAMO significa</div>
+            <div class="callout-text">Hoy Diana gasta horas construyendo ese punto de partida en Excel. Con la IA, ese trabajo ya está hecho cuando llega al lunes de ciclo. Ella no lo reemplaza — lo usa como su punto de partida y aplica su criterio encima.</div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:8px;padding:14px 16px;margin-top:16px">
+          <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:10px">Ejemplo real: Chocoramo Tajada (5x65g) — Canal Tradicional</div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--t3)">Plan anterior</span><strong>450 mil und.</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--t3)">N+1 semana actual</span><strong>458 mil und.</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 8px;background:var(--lblue);border-radius:6px">
+            <span style="color:var(--navy);font-weight:500">✦ Línea base IA</span><strong style="color:var(--navy)">465 mil und.</strong>
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-top:8px">El modelo sugiere +3.3% sobre el plan anterior. Diana decide si acepta, sube más, o baja según lo que sabe de la operación.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =================== SECCIÓN 5: PRONÓSTICO =================== -->
+<section class="section" id="s5">
+  <div class="container">
+    <div class="section-num">Sección 5 de 9</div>
+    <div class="section-title">Pantalla 2: Pronóstico por SKU</div>
+    <div class="section-lead">Aquí Diana ve el detalle producto por producto. Cada fila es un SKU con su canal. Puede filtrar por categoría o canal, y cambiar entre unidades, toneladas y valor en pesos.</div>
+
+    <div class="anno" style="margin-bottom:28px">
+      <div class="anno-header"><i class="ti ti-table"></i> Pronóstico por SKU — vista con anotaciones</div>
+      <div class="anno-body" style="overflow-x:auto">
+        <table class="fake-tbl">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Categ.</th>
+              <th>Canal</th>
+              <th style="text-align:right">Plan ant.<br><span style="font-weight:400;opacity:.7">① </span></th>
+              <th style="text-align:right">N+1<br><span style="font-weight:400;opacity:.7">② </span></th>
+              <th style="text-align:right;background:var(--blue)">Línea base IA ✦<br><span style="font-weight:400;opacity:.7">③ </span></th>
+              <th style="text-align:right">BB<br><span style="font-weight:400;opacity:.7">④ </span></th>
+              <th style="text-align:right;background:#0F4C81">Plan final<br><span style="font-weight:400;opacity:.7">⑤ </span></th>
+              <th style="text-align:right">Var %<br><span style="font-weight:400;opacity:.7">⑥ </span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Chocoramo Tajada (5x65g)</strong></td>
+              <td style="color:var(--t3);font-size:11px">Ponqués</td>
+              <td style="font-size:11px">Trad.</td>
+              <td style="text-align:right">450</td>
+              <td style="text-align:right">458 ↑</td>
+              <td class="hl" style="text-align:right">465</td>
+              <td style="text-align:right;color:var(--green)">+20</td>
+              <td class="hldark" style="text-align:right">485</td>
+              <td style="text-align:right;color:var(--green);font-weight:600">+7.8%</td>
+            </tr>
+            <tr>
+              <td><strong>Gansito Barrita (6x37g)</strong></td>
+              <td style="color:var(--t3);font-size:11px">Ponqués</td>
+              <td style="font-size:11px">Trad.</td>
+              <td style="text-align:right">320</td>
+              <td style="text-align:right">315 ↓</td>
+              <td class="hl" style="text-align:right">328</td>
+              <td style="text-align:right;color:var(--green)">+15</td>
+              <td class="hldark" style="text-align:right">343</td>
+              <td style="text-align:right;color:var(--green);font-weight:600">+7.2%</td>
+            </tr>
+            <tr>
+              <td><strong>Tostacos Queso (12x25g)</strong></td>
+              <td style="color:var(--t3);font-size:11px">Pasabocas</td>
+              <td style="font-size:11px">Trad.</td>
+              <td style="text-align:right">380</td>
+              <td style="text-align:right">384 →</td>
+              <td class="hl" style="text-align:right">391</td>
+              <td style="text-align:right;color:var(--red)">−12</td>
+              <td class="hldark" style="text-align:right">379</td>
+              <td style="text-align:right;color:var(--red);font-weight:600">−0.3%</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="font-size:10px;color:var(--t3);margin-top:8px">Cifras en miles de unidades · El toggle permite ver en Toneladas o Valor M COP</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:28px">
+      <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--navy)">①</div>
+        <div style="font-size:11px;color:var(--t2);font-weight:600;margin-top:4px">Plan anterior</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">Lo que se planeó el mes pasado. Es la línea de referencia.</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--navy)">②</div>
+        <div style="font-size:11px;color:var(--t2);font-weight:600;margin-top:4px">N+1</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">Recálculo semanal desde SAP. La flecha (↑ ↓ →) muestra si viene mejor o peor que el plan anterior.</div>
+      </div>
+      <div style="background:var(--lblue);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--navy)">③</div>
+        <div style="font-size:11px;color:var(--navy);font-weight:600;margin-top:4px">Línea base IA ✦</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">La propuesta del modelo. Punto de partida objetivo, sin sesgos.</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--navy)">④</div>
+        <div style="font-size:11px;color:var(--t2);font-weight:600;margin-top:4px">BB</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">Ajuste de Building Blocks aprobado. Verde = sube, rojo = baja.</div>
+      </div>
+      <div style="background:var(--navy);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:#fff">⑤</div>
+        <div style="font-size:11px;color:#fff;font-weight:600;margin-top:4px">Plan final</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">Línea base IA + BB. Lo que se carga a SAP.</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--navy)">⑥</div>
+        <div style="font-size:11px;color:var(--t2);font-weight:600;margin-top:4px">Var %</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">Diferencia del plan final vs el plan anterior. Alertas visuales en rojo/verde.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-ramo">
+      <span class="callout-icon" style="color:var(--navy)"><i class="ti ti-building-store"></i></span>
+      <div>
+        <div class="callout-title" style="color:var(--navy)">Para RAMO significa</div>
+        <div class="callout-text">Diana hoy tiene que navegar entre varias pestañas de Excel para comparar estas mismas columnas. Aquí están todas juntas, en una sola fila, con alertas automáticas. Además, al hacer clic en cualquier producto puede ver el desglose por regional (Bogotá, Antioquia, Valle, Costa) sin abrir otro archivo.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =================== SECCIÓN 6: BUILDING BLOCKS =================== -->
+<section class="section" id="s6">
+  <div class="container">
+    <div class="section-num">Sección 6 de 9</div>
+    <div class="section-title">Pantalla 3: Building Blocks</div>
+    <div class="section-lead">Los Building Blocks son los ajustes que cada área hace sobre la línea base. Comercial sabe de un trade deal, Marca sabe de una campaña, Negocio Moderno sabe de un cambio en góndola. Todos registran su ajuste aquí, con nombre y justificación.</div>
+
+    <div class="two-col">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Cómo fluye un Building Block</div>
+        <div class="pstep">
+          <div class="pstep-num" style="background:var(--blue)">1</div>
+          <div>
+            <div class="pstep-title">El área entra y registra su ajuste</div>
+            <div class="pstep-text">Andrés de Comercial abre la herramienta, selecciona el SKU, escribe el valor del ajuste y la justificación: <em>"Trade deal con Éxito — activación Q3 en Antioquia"</em>. Todo queda registrado con su nombre y la hora.</div>
+          </div>
+        </div>
+        <div class="pstep">
+          <div class="pstep-num" style="background:var(--blue)">2</div>
+          <div>
+            <div class="pstep-title">Diana recibe una notificación</div>
+            <div class="pstep-text">La campana del sistema le avisa a Diana que hay un nuevo ajuste pendiente. No necesita que Andrés le mande mensaje.</div>
+          </div>
+        </div>
+        <div class="pstep">
+          <div class="pstep-num" style="background:var(--blue)">3</div>
+          <div>
+            <div class="pstep-title">Diana revisa el impacto</div>
+            <div class="pstep-text">Al abrir el BB, Diana ve una gráfica que muestra cuánto cambia el plan si aprueba ese ajuste. Puede aprobar o rechazar con un clic.</div>
+          </div>
+        </div>
+        <div class="pstep">
+          <div class="pstep-num" style="background:var(--green)">4</div>
+          <div>
+            <div class="pstep-title">El plan final se actualiza solo</div>
+            <div class="pstep-text">Al aprobar, el BB se suma automáticamente a la columna "Plan final" del pronóstico. No hay que copiar nada.</div>
+          </div>
+        </div>
+
+        <div class="callout callout-ramo" style="margin-top:20px">
+          <span class="callout-icon" style="color:var(--navy)"><i class="ti ti-building-store"></i></span>
+          <div>
+            <div class="callout-title" style="color:var(--navy)">Para RAMO significa</div>
+            <div class="callout-text">Hoy esos ajustes llegan por correo, por Teams, en una nota de voz, o en una reunión. Diana los consolida de memoria. Con Building Blocks, todo queda escrito, fechado y con nombre. En 6 meses se puede ver quién pide más ajustes y si esos ajustes mejoran o empeoran el pronóstico.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <!-- Fake BB cards -->
+        <div class="bb-mini">
+          <div class="bb-mini-av" style="background:var(--blue)">CM</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="bb-mini-title">Comercial — Andrés Molina</div>
+              <span class="badge bg-green">Aprobado</span>
+            </div>
+            <div class="bb-mini-sub">Trade deal con Éxito — activación punto de venta canal moderno Q3</div>
+            <div class="bb-mini-val" style="color:var(--green)">Chocoramo Tajada &nbsp;·&nbsp; Antioquia &nbsp;·&nbsp; +20 mil und.</div>
+          </div>
+        </div>
+        <div class="bb-mini" style="border-left:3px solid var(--amber)">
+          <div class="bb-mini-av" style="background:var(--navy)">MP</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="bb-mini-title">Marca – Ponqués — Camila Torres</div>
+              <span class="badge bg-amber">En revisión</span>
+            </div>
+            <div class="bb-mini-sub">Campaña back-to-school jul–ago · tiendas escolares</div>
+            <div class="bb-mini-val" style="color:var(--green)">Gansito Barrita &nbsp;·&nbsp; Nacional &nbsp;·&nbsp; +15 mil und.</div>
+          </div>
+        </div>
+        <div class="bb-mini">
+          <div class="bb-mini-av" style="background:#5C6BC0">NM</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="bb-mini-title">Negocio Moderno — Juan Restrepo</div>
+              <span class="badge bg-green">Aprobado</span>
+            </div>
+            <div class="bb-mini-sub">Reducción espacio en góndola Jumbo/Metro Valle</div>
+            <div class="bb-mini-val" style="color:var(--red)">Tostacos Queso &nbsp;·&nbsp; Valle del Cauca &nbsp;·&nbsp; −12 mil und.</div>
+          </div>
+        </div>
+        <div class="bb-mini" style="border-left:3px solid var(--amber)">
+          <div class="bb-mini-av" style="background:var(--blue)">CM</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="bb-mini-title">Comercial — Andrés Molina</div>
+              <span class="badge bg-amber">En revisión</span>
+            </div>
+            <div class="bb-mini-sub">Pedido especial Olímpica · campaña temporada de playas</div>
+            <div class="bb-mini-val" style="color:var(--green)">Galletas Lecheritas &nbsp;·&nbsp; Costa Atlántica &nbsp;·&nbsp; +10 mil und.</div>
+          </div>
+        </div>
+
+        <div style="background:var(--lblue);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13px;color:var(--navy)">
+          <strong>La trazabilidad:</strong> dentro de 3 meses se puede preguntar — ¿Andrés pidió +20K en Chocoramo para Antioquia? ¿Cumplió? El sistema ya tiene la respuesta.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =================== SECCIÓN 7: SAP & CIERRE =================== -->
+<section class="section" id="s7">
+  <div class="container">
+    <div class="section-num">Sección 7 de 9</div>
+    <div class="section-title">Cierre del ciclo: aprobación y carga a SAP</div>
+    <div class="section-lead">Una vez Diana aprueba todos los Building Blocks, el ciclo cierra y el plan final se carga automáticamente a SAP en la transacción MD61. SAP sigue siendo el sistema maestro — la herramienta solo lo alimenta mejor.</div>
+
+    <div class="two-col">
+      <div>
+        <div class="dflow">
+          <div class="dflow-node" style="border-color:var(--blue);background:var(--lblue)">
+            <div class="dflow-icon" style="background:var(--blue);color:#fff"><i class="ti ti-user-check"></i></div>
+            <div>
+              <div class="dflow-title" style="color:var(--navy)">Diana aprueba el plan final</div>
+              <div class="dflow-sub">Revisa el pronóstico completo, aprueba los Building Blocks pendientes, y confirma el cierre del ciclo.</div>
+            </div>
+          </div>
+          <div class="dflow-arrow">↓</div>
+          <div class="dflow-node">
+            <div class="dflow-icon" style="background:#FEFCBF;color:var(--damber)"><i class="ti ti-file-spreadsheet"></i></div>
+            <div>
+              <div class="dflow-title">Generación del archivo de carga</div>
+              <div class="dflow-sub">El sistema crea automáticamente el archivo con el formato exacto que SAP necesita para MD61 — el mismo que hoy Diana prepara manualmente.</div>
+            </div>
+          </div>
+          <div class="dflow-arrow">↓</div>
+          <div class="dflow-node" style="border-color:var(--red);background:#FFF5F5">
+            <div class="dflow-icon" style="background:var(--red);color:#fff"><i class="ti ti-database-import"></i></div>
+            <div>
+              <div class="dflow-title" style="color:var(--red)">Carga automática a SAP — MD61</div>
+              <div class="dflow-sub">El plan de demanda entra directamente a SAP. DRP, MPS y MRP siguen corriendo en SAP como siempre — solo cambia el input.</div>
+            </div>
+          </div>
+          <div class="dflow-arrow">↓</div>
+          <div class="dflow-node" style="border-color:var(--green);background:#F0FFF4">
+            <div class="dflow-icon" style="background:var(--green);color:#fff"><i class="ti ti-check"></i></div>
+            <div>
+              <div class="dflow-title" style="color:var(--dgreen)">Ciclo cerrado</div>
+              <div class="dflow-sub">SAP ya tiene el plan. Producción y logística operan con base en él. El sistema empieza a capturar las ventas reales para medir la asertividad.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="callout callout-warn" style="margin-bottom:20px">
+          <span class="callout-icon">🔴</span>
+          <div>
+            <div class="callout-title">¿Qué NO cambia en SAP?</div>
+            <div class="callout-text">
+              DRP, MPS y MRP siguen corriendo exactamente igual en SAP.<br><br>
+              El piloto <strong>no toca</strong> ningún módulo de producción ni logística de SAP. Solo reemplaza la manera en que se prepara y carga el plan de demanda (MD61).<br><br>
+              <strong>La integración es de una sola dirección:</strong> el piloto lee de SAP para construir la línea base, y escribe en SAP cuando cierra el ciclo.
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-ramo">
+          <span class="callout-icon" style="color:var(--navy)"><i class="ti ti-building-store"></i></span>
+          <div>
+            <div class="callout-title" style="color:var(--navy)">Para RAMO significa</div>
+            <div class="callout-text">Hoy Diana dedica horas a la carga manual en SAP, fila por fila. Con el piloto, ese tiempo cae a cero. Y si el equipo de IT ya tiene acceso a MD61, la integración técnica es directa — no requiere un desarrollo grande en SAP.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =================== SECCIÓN 8: ASERTIVIDAD =================== -->
+<section class="section" id="s8">
+  <div class="container">
+    <div class="section-num">Sección 8 de 9</div>
+    <div class="section-title">Pantalla 4: Asertividad — ¿qué tan bien lo estamos haciendo?</div>
+    <div class="section-lead">La asertividad mide qué tan cerca estuvo el plan de lo que realmente se vendió. Si planeamos 100 y se vendieron 95 o 105, eso es bueno. Si se vendieron 70 o 140, hay un problema.</div>
+
+    <div class="two-col">
+      <div>
+        <!-- Accuracy bars by SKU -->
+        <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Asertividad por SKU — Junio 2026</div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span>Chocoramo Tajada (5x65g)</span><strong style="color:var(--green)">89.2%</strong>
+          </div>
+          <div class="acc-bar"><div class="acc-fill" style="width:89.2%;background:var(--green)"></div></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span>Gansito Barrita (6x37g)</span><strong style="color:var(--green)">88.1%</strong>
+          </div>
+          <div class="acc-bar"><div class="acc-fill" style="width:88.1%;background:var(--green)"></div></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span>Tostacos Queso (12x25g)</span><strong style="color:var(--amber)">83.4%</strong>
+          </div>
+          <div class="acc-bar"><div class="acc-fill" style="width:83.4%;background:var(--amber)"></div></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span>Maizitos Natural (12x30g)</span><strong style="color:var(--green)">88.9%</strong>
+          </div>
+          <div class="acc-bar"><div class="acc-fill" style="width:88.9%;background:var(--green)"></div></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span>Galletas Lecheritas (8x19g)</span><strong style="color:var(--amber)">82.8%</strong>
+          </div>
+          <div class="acc-bar"><div class="acc-fill" style="width:82.8%;background:var(--amber)"></div></div>
+        </div>
+        <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:6px;font-size:12px;color:var(--t2)">
+          Meta corporativa: <strong style="color:var(--green)">90%</strong> &nbsp;·&nbsp; Promedio actual: <strong style="color:var(--navy)">87.4%</strong> &nbsp;·&nbsp; Brecha: <span style="color:var(--amber)">−2.6 pp</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="callout callout-ai" style="margin-bottom:20px">
+          <span class="callout-icon">📈</span>
+          <div>
+            <div class="callout-title" style="color:var(--dgreen)">¿Por qué importa la asertividad?</div>
+            <div class="callout-text">
+              Cada punto porcentual de mejora en asertividad se traduce directamente en:<br><br>
+              <strong>Menos desperdicio:</strong> no se produce de más lo que no se va a vender.<br>
+              <strong>Menos rupturas:</strong> no se queda corto en productos que sí se demandan.<br>
+              <strong>Mejor servicio:</strong> los clientes reciben lo que pidieron.<br><br>
+              Hoy RAMO no tiene esta medición sistemática y automatizada por SKU.
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-ramo">
+          <span class="callout-icon" style="color:var(--navy)"><i class="ti ti-building-store"></i></span>
+          <div>
+            <div class="callout-title" style="color:var(--navy)">El ciclo de mejora continua</div>
+            <div class="callout-text">Después de cada ciclo de Demanda, el sistema compara lo que se planeó con lo que realmente se vendió. Si los ajustes de Comercial siempre sobreestiman, el modelo aprende a descontarlo. Si las campañas de Marca generan picos reales, el modelo las incorpora al año siguiente.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =================== SECCIÓN 9: RESUMEN =================== -->
+<section class="section" id="s9">
+  <div class="container">
+    <div class="section-num">Sección 9 de 9</div>
+    <div class="section-title">¿Qué resuelve este piloto y para quién?</div>
+    <div class="section-lead">El piloto no es una gran transformación — es el primer paso digital del proceso de demanda. Un proceso que ya existe, que ya funciona, pero que hoy depende demasiado de Excel y de la memoria de las personas.</div>
+
+    <div style="margin-bottom:32px">
+      <table class="comp-tbl">
+        <thead>
+          <tr><th>Situación</th><th>Hoy</th><th>Con el piloto</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Punto de partida del pronóstico</td>
+            <td class="before">Diana lo construye manualmente en Excel, descargando SAP</td>
+            <td class="after">El modelo IA lo genera automáticamente cada lunes</td>
+          </tr>
+          <tr>
+            <td>Ajustes de las áreas</td>
+            <td class="before">Llegan por correo, Teams, mensajes de voz — sin registro formal</td>
+            <td class="after">Cada área los registra en la herramienta con nombre, fecha y motivo</td>
+          </tr>
+          <tr>
+            <td>Consolidación del plan</td>
+            <td class="before">Diana lo ensambla manualmente, cruzando múltiples archivos</td>
+            <td class="after">Se calcula automáticamente al aprobar cada Building Block</td>
+          </tr>
+          <tr>
+            <td>Carga a SAP MD61</td>
+            <td class="before">Proceso manual, fila por fila, propenso a errores</td>
+            <td class="after">Automático al cierre del ciclo. Sin intervención manual.</td>
+          </tr>
+          <tr>
+            <td>Medición de exactitud</td>
+            <td class="before">No existe de forma sistemática por SKU</td>
+            <td class="after">Automática, por SKU y por área — mejora con cada ciclo</td>
+          </tr>
+          <tr>
+            <td>Trazabilidad de decisiones</td>
+            <td class="before">Se pierde — no hay registro de quién pidió qué y cuándo</td>
+            <td class="after">Todo queda registrado con fecha, persona y justificación</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cta-box">
+      <div class="cta-title">El piloto en una frase</div>
+      <div class="cta-sub">La misma decisión que Diana toma hoy, pero con mejor información, en menos tiempo y con plena trazabilidad.</div>
+      <div class="cta-pills">
+        <span class="cta-pill">✦ IA genera la línea base</span>
+        <span class="cta-pill">🤝 Building Blocks recogen el conocimiento del equipo</span>
+        <span class="cta-pill">📊 Asertividad mejora ciclo a ciclo</span>
+        <span class="cta-pill">🔴 SAP sigue siendo el sistema maestro</span>
+        <span class="cta-pill">🇨🇴 847 SKUs · 3 canales · 5 regionales</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+function setActive(el){
+  document.querySelectorAll('.nav-step').forEach(function(s){s.classList.remove('active');});
+  el.classList.add('active');
+}
+// Highlight on scroll
+var sections=['s1','s2','s3','s4','s5','s6','s7','s8','s9'];
+window.addEventListener('scroll',function(){
+  var scrollPos=window.scrollY+80;
+  sections.forEach(function(id,i){
+    var el=document.getElementById(id);
+    if(!el)return;
+    if(el.offsetTop<=scrollPos&&(el.offsetTop+el.offsetHeight)>scrollPos){
+      document.querySelectorAll('.nav-step').forEach(function(s,j){
+        s.classList.toggle('active',j===i);
+        if(j<i)s.classList.add('done'); else s.classList.remove('done');
+      });
+    }
+  });
+});
+</script>
+</body>
+</html>
